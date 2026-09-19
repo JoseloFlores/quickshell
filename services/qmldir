@@ -16,3 +16,4 @@ singleton Screenshot Screenshot.qml
 singleton Logger Logger.qml
 singleton Bluetooth Bluetooth.qml
 singleton Calendar Calendar.qml
+singleton Updates Updates.qml

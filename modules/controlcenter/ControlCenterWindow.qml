@@ -25,6 +25,7 @@ PanelWindow {
     readonly property var gamingMode: QsServices.GamingMode
     readonly property var settings: QsServices.Settings
     readonly property var screenshot: QsServices.Screenshot
+    readonly property var updates: QsServices.Updates
 
     property bool shouldShow: false
 
@@ -217,6 +218,15 @@ PanelWindow {
                             QuickToggle { Layout.fillWidth: true; icon: "󰾴"; label: "Gaming Mode"; subLabel: root.gamingMode.enabled ? "Performance" : "Balanced"; active: root.gamingMode.enabled; activeColor: pywal.success; onClicked: root.gamingMode.toggle() }
                             QuickToggle { Layout.fillWidth: true; icon: "󰄉"; label: "Focus Mode"; subLabel: root.settings.focusModeEnabled ? `${root.settings.focusModeMinutesLeft} min remaining` : "25 min timer"; active: root.settings.focusModeEnabled; activeColor: pywal.info; onClicked: { root.settings.focusModeEnabled = !root.settings.focusModeEnabled; if (root.settings.focusModeEnabled) { root.settings.focusModeMinutesLeft = 25; root.notifs.dnd = true } } }
                             QuickToggle { Layout.fillWidth: true; Layout.columnSpan: 2; icon: "󰹑"; label: "Screenshot"; subLabel: "Capture Screen"; active: false; activeColor: root.cSecondary; onClicked: { root.shouldShow = false; screenshotTimer.mode = "screen"; screenshotTimer.restart() } }
+                            QuickToggle {
+                                Layout.fillWidth: true; Layout.columnSpan: 2
+                                icon: root.updates.checking ? "󰑐" : (root.updates.count > 0 ? "󰚰" : "󰄲")
+                                label: "System Updates"
+                                subLabel: root.updates.checking ? "Checking..." : (root.updates.count > 0 ? `${root.updates.count} pending` : (root.updates.lastCheck !== "" ? `Updated · rev. ${root.updates.lastCheck}` : "Up to date"))
+                                active: root.updates.count > 0
+                                activeColor: pywal.warning
+                                onClicked: { root.shouldShow = false; root.updates.refresh(); root.updates.runUpgrade() }
+                            }
                             QuickToggle { Layout.fillWidth: true; icon: root.screenshot.isRecording ? "󰛿" : "󰻃"; label: root.screenshot.isRecording ? "Stop Recording" : "Record Screen"; subLabel: root.screenshot.isRecording ? "Recording in progress" : "Start wf-recorder"; active: root.screenshot.isRecording; activeColor: pywal.error; onClicked: { if (root.screenshot.isRecording) root.screenshot.stopRecording(); else { root.shouldShow = false; recordTimer.restart() } } }
                             QuickToggle { Layout.fillWidth: true; icon: "󰉋"; label: "Open Captures"; subLabel: "Screenshots & recordings"; active: false; activeColor: root.cSecondary; onClicked: screenshotsProcess.running = true }
                         }

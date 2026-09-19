@@ -326,6 +326,42 @@ Item {
                 }
             }
             
+            // ═══ PILL: System Updates (only when pending) ═══
+            AuroraSurface {
+                id: updatesPill
+                height: 32
+                width: updatesLoader.implicitWidth + 18
+                radius: 20
+                color: pywal.surfaceContainerHigh
+                strokeColor: pywal.outlineVariant
+                borderWidth: 0
+                accentColor: pywal.warning
+                elevation: 3
+                visible: item?.active ?? false
+
+                Behavior on color {
+                    ColorAnimation { duration: 300 }
+                }
+                Behavior on width {
+                    NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+                }
+
+                Loader {
+                    id: updatesLoader
+                    anchors.centerIn: parent
+                    asynchronous: true
+                    source: "components/Updates.qml"
+
+                    Binding {
+                        target: updatesLoader.item
+                        property: "barWindow"
+                        value: root.barWindow
+                        when: updatesLoader.status === Loader.Ready && root.barWindow !== undefined
+                        restoreMode: Binding.RestoreBinding
+                    }
+                }
+            }
+
             // ═══ PILL 3: Battery + Control Center + Tray ═══
             AuroraSurface {
                 id: powerPill
