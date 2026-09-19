@@ -88,6 +88,19 @@ PanelWindow {
         shouldShow = false
     }
 
+    // Captura con retardo: cierra el dashboard primero para que slurp
+    // pueda tomar el mouse/teclado y el panel no salga en la foto.
+    Timer {
+        id: regionTimer
+        interval: 350
+        onTriggered: root.screenshot.takeScreenshot("region")
+    }
+    Timer {
+        id: dashRecordTimer
+        interval: 350
+        onTriggered: root.screenshot.startRecording()
+    }
+
     function daysInMonth(year, month) {
         return new Date(year, month + 1, 0).getDate()
     }
@@ -447,7 +460,7 @@ PanelWindow {
                                         label: "Region"
                                         subLabel: "Screenshot"
                                         accent: root.cPrimary
-                                        onClicked: root.screenshot.takeScreenshot("region")
+                                        onClicked: { root.closeDashboard(); regionTimer.restart() }
                                     }
                                     QuickAction {
                                         Layout.fillWidth: true
@@ -458,8 +471,10 @@ PanelWindow {
                                         onClicked: {
                                             if (root.screenshot.isRecording)
                                                 root.screenshot.stopRecording()
-                                            else
-                                                root.screenshot.startRecording()
+                                            else {
+                                                root.closeDashboard()
+                                                dashRecordTimer.restart()
+                                            }
                                         }
                                     }
                                     QuickAction {

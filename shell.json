@@ -5,7 +5,7 @@
   },
   "paths": {
     "pywalColors": "~/.cache/wal/colors.json",
-    "screenshotsDir": "~/Pictures/Screenshots"
+    "screenshotsDir": "~/Pictures/Capturas"
   },
   "osd": {
     "volumeTimeoutMs": 2000,

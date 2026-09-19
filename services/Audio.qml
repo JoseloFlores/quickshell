@@ -17,6 +17,25 @@ Singleton {
     property real sourceVolume: 0
     readonly property int sourcePercentage: Math.round(sourceVolume * 100)
 
+    // Escritura coalescada: el scroll genera muchos ticks; se actualiza la
+    // propiedad al instante (UI/OSD responden ya) y se escribe a PipeWire
+    // como máximo una vez cada applyTimer.interval con el último valor.
+    // -1 = sin escritura pendiente.
+    property real _pendingVolume: -1
+
+    Timer {
+        id: applyTimer
+        interval: 60
+        onTriggered: {
+            if (root._pendingVolume < 0)
+                return
+            const v = Math.max(0, Math.min(1.5, root._pendingVolume))
+            root._pendingVolume = -1
+            setVolProc.command = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", v.toFixed(3)]
+            setVolProc.running = true
+        }
+    }
+
     Timer {
         interval: 1000
         running: true
@@ -71,9 +90,16 @@ Singleton {
     }
 
     function setVolume(newVolume) {
-        setMute(false)
-        setVolProc.command = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", Math.max(0, Math.min(1.5, newVolume)).toFixed(3)]
-        setVolProc.running = true
+        const v = Math.max(0, Math.min(1.5, newVolume))
+        // Optimista: la barra/OSD/sliders reaccionan en este frame.
+        // El poll de 1s confirma y corrige si PipeWire clampó el valor.
+        root.volume = v
+        if (root.muted) {
+            root.muted = false
+            setMute(false)
+        }
+        root._pendingVolume = v
+        applyTimer.restart()
     }
 
     function increaseVolume() {
@@ -110,7 +136,7 @@ Singleton {
         setSourceMuteProc.running = true
     }
 
-    Process { id: setVolProc }
+    Process { id: setVolProc; onExited: () => { if (!getSink.running) getSink.running = true } }
     Process { id: setMuteProc }
     Process { id: setSourceVolProc }
     Process { id: setSourceMuteProc }

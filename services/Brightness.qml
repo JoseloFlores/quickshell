@@ -20,6 +20,31 @@ Singleton {
     
     property int currentValue: 0
     property int maxValue: 255
+
+    // Escritura coalescada (igual que Audio): el scroll genera muchos ticks;
+    // se actualiza la propiedad al instante (barra/OSD responden ya) y se
+    // escribe al backlight como máximo una vez cada applyTimer.interval.
+    // -1 = sin escritura pendiente.
+    property real _pendingBrightness: -1
+
+    Timer {
+        id: applyTimer
+        interval: 60
+        onTriggered: {
+            if (root._pendingBrightness < 0 || backlightPath === "")
+                return
+            const newValue = Math.max(0, Math.min(1, root._pendingBrightness))
+            root._pendingBrightness = -1
+            // Use brightnessctl when available (works for most backlight devices)
+            // Fallback to sysfs write when brightnessctl isn't present.
+            // Trailing cat lets us converge on the real applied value fast.
+            const percent = Math.round(newValue * 100)
+            const sysfsValue = Math.round(newValue * maxValue)
+            const cmd = `brightnessctl set ${percent}% || echo ${sysfsValue} | sudo tee "${backlightPath}" >/dev/null; cat "${backlightPath}"`
+            setBrightnessProcess.command = ["/bin/sh", "-c", cmd]
+            setBrightnessProcess.running = true
+        }
+    }
     
     Component.onCompleted: {
         detectBacklightDevice()
@@ -51,15 +76,11 @@ Singleton {
         if (backlightPath === "")
             return
 
-        // Use brightnessctl when available (works for most backlight devices)
-        // Fallback to sysfs write when brightnessctl isn't present.
-        const percent = Math.round(newValue * 100)
-        const sysfsValue = Math.round(newValue * maxValue)
-        const cmd = `brightnessctl set ${percent}% || echo ${sysfsValue} | sudo tee "${backlightPath}" >/dev/null; cat "${backlightPath}"`
-        setBrightnessProcess.command = ["/bin/sh", "-c", cmd]
-        setBrightnessProcess.running = true
-        
-        // Read brightness will be triggered by the update timer
+        // Optimista: la barra/OSD/sliders reaccionan en este frame.
+        // El trailing cat + el timer de 2s confirman el valor real aplicado.
+        root.brightness = newValue
+        root._pendingBrightness = newValue
+        applyTimer.restart()
     }
     
     function increaseBrightness() {
@@ -121,10 +142,24 @@ Singleton {
         }
     }
     
-    // Set brightness process
+    // Set brightness process.
+    // Collects the trailing `cat` so the UI converges on the real applied
+    // value without waiting for the 2s update timer.
     Process {
         id: setBrightnessProcess
         running: false
+
+        stdout: SplitParser {
+            onRead: data => {
+                const value = parseInt(data.trim())
+                if (!isNaN(value)) {
+                    currentValue = value
+                    brightness = maxValue > 0 ? value / maxValue : brightness
+                }
+            }
+        }
+
+        onExited: () => { if (!brightnessProcess.running) readBrightness() }
     }
     
     // Update timer - optimized interval

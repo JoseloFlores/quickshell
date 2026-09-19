@@ -16,7 +16,9 @@ Singleton {
     property string screenshotsDir: QsConfig.Config.paths.screenshotsDir
 
     property string _slurpGeometry: ""
+    property string _slurpStderr: ""
     property string _windowGeomText: ""
+    property string _focusedOutput: ""
     
     Component.onCompleted: {
         // Create screenshots directory if it doesn't exist
@@ -35,7 +37,12 @@ Singleton {
         const filepath = `${screenshotsDir}/${filename}`
         
         if (mode === "region") {
-            // For region selection, use slurp to get geometry then grim to capture
+            // For region selection, use slurp to get geometry then grim to capture.
+            // Guard: re-exec mataría al slurp ya abierto (SIGTERM) — ignorar doble clic.
+            if (slurpProc.running) {
+                QsServices.Logger.debug("Screenshot", "Region selection already in progress, ignoring")
+                return
+            }
             slurpProc.exec(["slurp"])
         } else if (mode === "screen") {
             // Capture entire screen
@@ -48,21 +55,39 @@ Singleton {
         }
     }
     
-    // Get region geometry with slurp
+    // Get region geometry with slurp.
+    // slurp exit codes: 0 = selected, 1 = user cancelled (ESC / right-click),
+    // 15 (SIGTERM) = killed, e.g. shell reloaded mid-selection.
     Process {
         id: slurpProc
         stdout: StdioCollector {
             onStreamFinished: root._slurpGeometry = text.trim()
         }
+        stderr: StdioCollector {
+            onStreamFinished: root._slurpStderr = text.trim()
+        }
         onExited: code => {
             const geometry = root._slurpGeometry
+            const errText = root._slurpStderr
             root._slurpGeometry = ""
+            root._slurpStderr = ""
 
+            if (code === 15) {
+                QsServices.Logger.warn("Screenshot", "slurp was killed (SIGTERM) — shell may have reloaded, ignoring")
+                return
+            }
             if (code !== 0) {
-                QsServices.Logger.error("Screenshot", `slurp failed with code: ${code}`)
+                if (errText !== "")
+                    QsServices.Logger.error("Screenshot", `slurp failed (code ${code}): ${errText}`)
+                else
+                    QsServices.Logger.debug("Screenshot", `slurp cancelled by user (code ${code})`)
+                notifyProc.exec(["notify-send", "-i", "camera", "Sin captura",
+                    "Pulsa Región y ARRASTRA un rectángulo con el mouse (ESC cancela). Un clic solo no selecciona nada."])
                 return
             }
             if (geometry === "") {
+                notifyProc.exec(["notify-send", "-i", "camera", "Sin captura",
+                    "Selección vacía: pulsa y ARRASTRA para marcar el área."])
                 return
             }
 
@@ -141,23 +166,101 @@ Singleton {
         id: notifyProc
     }
     
-    function startRecording() {
+    function startRecording(mode = "area") {
         if (isRecording) return
-        
+
+        // mode "full": graba el monitor con foco de inmediato
+        // mode "area" (default): pide selección con slurp, ESC cancela
+        if (mode === "full") {
+            focusedMonitorProc.exec(["sh", "-c", "hyprctl monitors -j | jq -r '.[] | select(.focused==1) | .name'"])
+            return
+        }
+        // Guard: re-exec mataría al slurp ya abierto (SIGTERM) — ignorar doble clic.
+        if (slurpRecordProc.running) {
+            QsServices.Logger.debug("Screenshot", "Record area selection already in progress, ignoring")
+            return
+        }
+        slurpRecordProc.exec(["slurp"])
+    }
+
+    // Monitor con foco: wf-recorder pide elegir salida si hay 2+ monitores,
+    // por eso siempre pasamos -o explícito en modo full.
+    Process {
+        id: focusedMonitorProc
+        stdout: StdioCollector {
+            onStreamFinished: root._focusedOutput = text.trim()
+        }
+        onExited: code => {
+            var output = root._focusedOutput
+            root._focusedOutput = ""
+            if (code !== 0 || output === "") {
+                QsServices.Logger.warn("Screenshot", "Could not detect focused monitor, using eDP-1")
+                output = "eDP-1"
+            }
+            _startRecorder("", output)
+        }
+    }
+
+    function _startRecorder(geometry, output) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
         const filename = `recording-${timestamp}.mp4`
         const filepath = `${screenshotsDir}/${filename}`
         root.lastRecordingPath = filepath
-        
-        recordProc.exec([
-            "wf-recorder",
-            "-f", filepath,
-            "-c", "h264_vaapi",
-            "-d", "/dev/dri/renderD128"
-        ])
-        
+
+        var args
+        var label
+        if (geometry !== "") {
+            args = ["wf-recorder", "-g", geometry, "-f", filepath]
+            label = `area ${geometry}`
+        } else {
+            // -o explícito: con 2+ monitores wf-recorder pregunta y falla sin TTY
+            args = ["wf-recorder", "-o", output ?? "eDP-1", "-f", filepath, "-c", "h264_vaapi", "-d", "/dev/dri/renderD128"]
+            label = `full (${output ?? "eDP-1"})`
+        }
+
+        recordProc.exec(args)
+
         root.isRecording = true
-        QsServices.Logger.info("Screenshot", "Recording started")
+        QsServices.Logger.info("Screenshot", `Recording started (${label})`)
+        notifyProc.exec([
+            "notify-send",
+            "-i", "video-x-generic",
+            "Screen recording started",
+            `${label} — press Stop to finish`
+        ])
+    }
+
+    // Selección de área para grabación (slurp). ESC / código 1 = cancela el usuario.
+    Process {
+        id: slurpRecordProc
+        stdout: StdioCollector {
+            onStreamFinished: root._slurpGeometry = text.trim()
+        }
+        stderr: StdioCollector {
+            onStreamFinished: root._slurpStderr = text.trim()
+        }
+        onExited: code => {
+            const geometry = root._slurpGeometry
+            const errText = root._slurpStderr
+            root._slurpGeometry = ""
+            root._slurpStderr = ""
+
+            if (code === 15) {
+                QsServices.Logger.warn("Screenshot", "record slurp was killed (SIGTERM), ignoring")
+                return
+            }
+            if (code !== 0 || geometry === "") {
+                if (errText !== "")
+                    QsServices.Logger.error("Screenshot", `record slurp failed (code ${code}): ${errText}`)
+                else
+                    QsServices.Logger.debug("Screenshot", `record area selection cancelled (code ${code})`)
+                notifyProc.exec(["notify-send", "-i", "video-x-generic", "Sin grabación",
+                    "Pulsa Record y ARRASTRA un rectángulo con el mouse (ESC cancela). Un clic solo no selecciona nada."])
+                return
+            }
+            QsServices.Logger.debug("Screenshot", `Recording region: ${geometry}`)
+            _startRecorder(geometry)
+        }
     }
     
     Process {
@@ -171,6 +274,14 @@ Singleton {
                     "-i", "video-x-generic",
                     "Screen recording saved",
                     root.lastRecordingPath
+                ])
+            } else {
+                QsServices.Logger.error("Screenshot", `Recording failed with code: ${code}`)
+                notifyProc.exec([
+                    "notify-send",
+                    "-i", "dialog-error",
+                    "Screen recording failed",
+                    `wf-recorder exited with code ${code} — check Quickshell log`
                 ])
             }
         }

@@ -99,15 +99,24 @@ Item {
         anchors.margins: -4
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        
+
+        // Acumulador: una rueda entrega ~120 unidades por tick; un touchpad
+        // entrega muchas fracciones pequeñas. Acumular da pasos proporcionales
+        // en ambos casos en vez de un salto entero por evento mínimo.
+        property real wheelAccum: 0
+
         onWheel: wheel => {
-            if (wheel.angleDelta.y > 0) {
+            wheelAccum += wheel.angleDelta.y
+            while (wheelAccum >= 120) {
+                wheelAccum -= 120
                 audio.increaseVolume()
-            } else {
+            }
+            while (wheelAccum <= -120) {
+                wheelAccum += 120
                 audio.decreaseVolume()
             }
         }
-        
+
         onClicked: audio.toggleMute()
     }
     
