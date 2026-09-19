@@ -1,6 +1,6 @@
-import QtQuick 6.10
-import QtQuick.Layouts 6.10
-import QtQuick.Controls 6.10
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
 import "../../../services" as QsServices
 

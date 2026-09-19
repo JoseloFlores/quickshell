@@ -1,6 +1,6 @@
-import QtQuick 6.10
-import QtQuick.Layouts 6.10
-import QtQuick.Controls 6.10 as QQC
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls as QQC
 import Quickshell
 import Quickshell.Wayland
 import "../../config" as QsConfig

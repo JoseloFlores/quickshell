@@ -1,6 +1,6 @@
-import QtQuick 6.10
-import QtQuick.Layouts 6.10
-import QtQuick.Controls 6.10 as QQC
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls as QQC
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Services.UPower
@@ -25,6 +25,7 @@ PanelWindow {
     readonly property var powerProfiles: QsServices.PowerProfiles
     readonly property var notifs: QsServices.Notifs
     readonly property var bluetooth: QsServices.Bluetooth
+    readonly property var calendar: QsServices.Calendar
     readonly property var battery: UPower.displayDevice
 
     readonly property color cSurface: pywal.surfaceContainerHighest
@@ -41,14 +42,35 @@ PanelWindow {
     readonly property int currentYear: currentDate.getFullYear()
     readonly property int currentDay: currentDate.getDate()
     readonly property var dayLabels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    // Month navigation: 0 = current month, +1 = next, -1 = previous
+    property int monthOffset: 0
+    // Selected day of the visible month (-1 = none)
+    property int selectedDay: -1
+    readonly property date visibleMonthDate: new Date(currentYear, currentMonth + monthOffset, 1)
+    readonly property int shownMonth: visibleMonthDate.getMonth()
+    readonly property int shownYear: visibleMonthDate.getFullYear()
+    onMonthOffsetChanged: selectedDay = -1
+    // Agenda: Thunderbird events for the selected day (max 3 shown)
+    readonly property var agendaEvents: root.selectedDay > 0
+        ? root.calendar.eventsForDay(root.shownYear, root.shownMonth, root.selectedDay)
+        : []
+    readonly property int agendaShown: Math.min(root.agendaEvents.length, 3)
+    readonly property int agendaExtraH: root.selectedDay > 0
+        ? (16 + 6 + root.agendaShown * 26 + Math.max(0, root.agendaShown - 1) * 6
+           + (root.agendaEvents.length > 3 ? 22 : 0))
+        : 0
+
+    function openCalendarApp() {
+        Quickshell.execDetached(["thunderbird", "-calendar"])
+    }
     readonly property int calendarOffset: {
-        const first = new Date(currentYear, currentMonth, 1).getDay()
+        const first = new Date(shownYear, shownMonth, 1).getDay()
         return (first + 6) % 7
     }
-    readonly property int calendarDays: new Date(currentYear, currentMonth + 1, 0).getDate()
+    readonly property int calendarDays: new Date(shownYear, shownMonth + 1, 0).getDate()
     readonly property var calendarCells: {
         const cells = []
-        const prevMonthDays = new Date(currentYear, currentMonth, 0).getDate()
+        const prevMonthDays = new Date(shownYear, shownMonth, 0).getDate()
         for (let index = 0; index < 42; index++) {
             const dayNumber = index - calendarOffset + 1
             if (dayNumber < 1) {
@@ -56,7 +78,7 @@ PanelWindow {
             } else if (dayNumber > calendarDays) {
                 cells.push({ day: dayNumber - calendarDays, current: false, today: false })
             } else {
-                cells.push({ day: dayNumber, current: true, today: dayNumber === currentDay })
+                cells.push({ day: dayNumber, current: true, today: monthOffset === 0 && dayNumber === currentDay })
             }
         }
         return cells
@@ -127,9 +149,13 @@ PanelWindow {
                     Layout.fillWidth: true
 
                     ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 0
                         spacing: 2
 
                         Text {
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
                             text: time.format("dddd")
                             font.family: QsConfig.Config.appearance.fontFamily
                             font.pixelSize: 28
@@ -138,6 +164,8 @@ PanelWindow {
                         }
 
                         Text {
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
                             text: time.format("MMMM d, yyyy  •  hh:mm")
                             font.family: QsConfig.Config.appearance.fontFamily
                             font.pixelSize: 12
@@ -179,7 +207,7 @@ PanelWindow {
 
                         SurfaceCard {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 254
+                            Layout.preferredHeight: 254 + root.agendaExtraH
 
                             ColumnLayout {
                                 anchors.fill: parent
@@ -196,11 +224,21 @@ PanelWindow {
                                         color: root.cText
                                     }
                                     Item { Layout.fillWidth: true }
+                                    CalNavButton {
+                                        navIcon: "󰅁"
+                                        onNavigated: root.monthOffset--
+                                    }
                                     Text {
-                                        text: time.format("MMMM yyyy")
+                                        Layout.minimumWidth: 110
+                                        horizontalAlignment: Text.AlignHCenter
+                                        text: Qt.formatDate(root.visibleMonthDate, "MMMM yyyy")
                                         font.family: QsConfig.Config.appearance.fontFamily
                                         font.pixelSize: 12
                                         color: root.cSubText
+                                    }
+                                    CalNavButton {
+                                        navIcon: "󰅂"
+                                        onNavigated: root.monthOffset++
                                     }
                                 }
 
@@ -233,27 +271,139 @@ PanelWindow {
                                         Rectangle {
                                             id: dayCell
                                             required property var modelData
+                                            readonly property bool isSelected: dayCell.modelData.current && dayCell.modelData.day === root.selectedDay
                                             Layout.fillWidth: true
                                             Layout.fillHeight: true
                                             Layout.preferredHeight: 24
                                             radius: 12
-                                            color: dayCell.modelData.today
-                                                ? Qt.rgba(root.cPrimary.r, root.cPrimary.g, root.cPrimary.b, 0.18)
-                                                : dayCell.modelData.current
-                                                    ? "transparent"
-                                                    : Qt.rgba(root.cText.r, root.cText.g, root.cText.b, 0.03)
-                                            border.width: dayCell.modelData.today ? 1 : 0
+                                            color: dayCell.isSelected
+                                                ? Qt.rgba(root.cPrimary.r, root.cPrimary.g, root.cPrimary.b, 0.32)
+                                                : dayCell.modelData.today
+                                                    ? Qt.rgba(root.cPrimary.r, root.cPrimary.g, root.cPrimary.b, 0.18)
+                                                    : dayMouse.containsMouse && dayCell.modelData.current
+                                                        ? Qt.rgba(root.cText.r, root.cText.g, root.cText.b, 0.08)
+                                                        : dayCell.modelData.current
+                                                            ? "transparent"
+                                                            : Qt.rgba(root.cText.r, root.cText.g, root.cText.b, 0.03)
+                                            border.width: (dayCell.modelData.today || dayCell.isSelected) ? 1 : 0
                                             border.color: Qt.rgba(root.cPrimary.r, root.cPrimary.g, root.cPrimary.b, 0.36)
 
                                             Text {
                                                 anchors.centerIn: parent
+                                                anchors.verticalCenterOffset: dayCell.modelData.current && root.calendar.hasEvents(root.shownYear, root.shownMonth, dayCell.modelData.day) ? -2 : 0
                                                 text: `${dayCell.modelData.day}`
                                                 font.family: QsConfig.Config.appearance.fontFamily
                                                 font.pixelSize: 11
-                                                font.weight: dayCell.modelData.today ? Font.Bold : Font.Medium
+                                                font.weight: (dayCell.modelData.today || dayCell.isSelected) ? Font.Bold : Font.Medium
                                                 color: dayCell.modelData.current ? root.cText : root.cSubText
                                                 opacity: dayCell.modelData.current ? 1.0 : 0.45
                                             }
+
+                                            // Event dot for days with Thunderbird calendar events
+                                            Rectangle {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                anchors.bottom: parent.bottom
+                                                anchors.bottomMargin: 4
+                                                width: 4
+                                                height: 4
+                                                radius: 2
+                                                color: root.cPrimary
+                                                visible: dayCell.modelData.current && root.calendar.hasEvents(root.shownYear, root.shownMonth, dayCell.modelData.day)
+                                            }
+
+                                            MouseArea {
+                                                id: dayMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                enabled: dayCell.modelData.current
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    const d = dayCell.modelData.day
+                                                    root.selectedDay = (root.selectedDay === d) ? -1 : d
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Agenda: Thunderbird events for the selected day
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 6
+                                    visible: root.selectedDay > 0
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: root.selectedDay > 0
+                                            ? (root.agendaEvents.length > 0
+                                                ? `${Qt.formatDate(new Date(root.shownYear, root.shownMonth, root.selectedDay), "d MMM")} · ${root.agendaEvents.length}`
+                                                : `${Qt.formatDate(new Date(root.shownYear, root.shownMonth, root.selectedDay), "d MMM")} · sin eventos`)
+                                            : ""
+                                        font.family: QsConfig.Config.appearance.fontFamily
+                                        font.pixelSize: 11
+                                        font.weight: Font.DemiBold
+                                        color: root.cSubText
+                                    }
+
+                                    Repeater {
+                                        model: root.agendaEvents.slice(0, 3)
+
+                                        Rectangle {
+                                            id: eventRow
+                                            required property var modelData
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 26
+                                            radius: 13
+                                            color: eventMouse.containsMouse
+                                                ? Qt.rgba(root.cPrimary.r, root.cPrimary.g, root.cPrimary.b, 0.16)
+                                                : Qt.rgba(root.cText.r, root.cText.g, root.cText.b, 0.04)
+
+                                            RowLayout {
+                                                anchors.fill: parent
+                                                anchors.leftMargin: 12
+                                                anchors.rightMargin: 12
+                                                spacing: 8
+
+                                                Text {
+                                                    Layout.preferredWidth: 62
+                                                    elide: Text.ElideRight
+                                                    text: eventRow.modelData.all ? "Todo el día" : (eventRow.modelData.s ?? "")
+                                                    font.family: QsConfig.Config.appearance.fontFamily
+                                                    font.pixelSize: 11
+                                                    font.weight: Font.Medium
+                                                    color: root.cPrimary
+                                                }
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    elide: Text.ElideRight
+                                                    text: eventRow.modelData.t ?? ""
+                                                    font.family: QsConfig.Config.appearance.fontFamily
+                                                    font.pixelSize: 11
+                                                    color: root.cText
+                                                }
+                                            }
+
+                                            MouseArea {
+                                                id: eventMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: root.openCalendarApp()
+                                            }
+                                        }
+                                    }
+
+                                    Text {
+                                        visible: root.agendaEvents.length > 3
+                                        text: `+${root.agendaEvents.length - 3} más en Thunderbird`
+                                        font.family: QsConfig.Config.appearance.fontFamily
+                                        font.pixelSize: 11
+                                        color: root.cPrimary
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.openCalendarApp()
                                         }
                                     }
                                 }
@@ -500,6 +650,32 @@ PanelWindow {
         }
     }
 
+    component CalNavButton: Rectangle {
+        id: navRoot
+        required property string navIcon
+        signal navigated()
+        width: 26
+        height: 26
+        radius: 13
+        color: navMouse.containsMouse ? Qt.rgba(root.cPrimary.r, root.cPrimary.g, root.cPrimary.b, 0.16) : "transparent"
+
+        Text {
+            anchors.centerIn: parent
+            text: navRoot.navIcon
+            font.family: "Material Design Icons"
+            font.pixelSize: 16
+            color: root.cSubText
+        }
+
+        MouseArea {
+            id: navMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: navRoot.navigated()
+        }
+    }
+
     component SurfaceCard: Rectangle {
         radius: 22
         color: root.cSurfaceContainer
@@ -512,7 +688,11 @@ PanelWindow {
         required property string icon
         required property string label
         required property color accent
-        width: chipRow.implicitWidth + 18
+        // Fixed width + fill-anchored row + eliding label: every label length
+        // fits by construction. (Width math off implicitWidth proved fragile:
+        // a free RowLayout grants children their full implicit width, so
+        // maximumWidth never constrained and the centered row spilled out.)
+        width: 150
         height: 34
         radius: 17
         color: Qt.rgba(accent.r, accent.g, accent.b, 0.14)
@@ -520,8 +700,9 @@ PanelWindow {
         border.color: Qt.rgba(accent.r, accent.g, accent.b, 0.18)
 
         RowLayout {
-            id: chipRow
-            anchors.centerIn: parent
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
             spacing: 6
             Text {
                 text: chipRoot.icon
@@ -530,6 +711,8 @@ PanelWindow {
                 color: chipRoot.accent
             }
             Text {
+                Layout.fillWidth: true
+                elide: Text.ElideRight
                 text: chipRoot.label
                 font.family: QsConfig.Config.appearance.fontFamily
                 font.pixelSize: 11
@@ -600,11 +783,14 @@ PanelWindow {
         required property string value
         required property string detail
         required property color accent
+        // Fill the parent column: without this the implicit width is 0 and
+        // the inner row crams icon/column/value on top of each other.
+        Layout.fillWidth: true
         radius: 16
         color: root.cSurfaceContainerHigh
         border.width: 1
         border.color: Qt.rgba(metricRoot.accent.r, metricRoot.accent.g, metricRoot.accent.b, 0.14)
-        implicitHeight: 52
+        implicitHeight: 56
 
         RowLayout {
             anchors.fill: parent
@@ -649,17 +835,24 @@ PanelWindow {
         required property string title
         required property string body
         required property color accent
+        // Fill the parent column: without this the implicit width is 0 and
+        // title/body stack on top of each other.
+        Layout.fillWidth: true
         radius: 18
         color: root.cSurfaceContainerHigh
         border.width: 1
         border.color: Qt.rgba(accent.r, accent.g, accent.b, 0.18)
-        implicitHeight: 74
+        // Adaptive height: fixed 74px clipped wrapped bodies ("Top processes",
+        // long inbox/power lines), which then overlapped the card below.
+        implicitHeight: insightCol.implicitHeight + 24
 
         ColumnLayout {
+            id: insightCol
             anchors.fill: parent
             anchors.margins: 12
             spacing: 4
             Text {
+                Layout.fillWidth: true
                 text: insightRoot.title
                 font.family: QsConfig.Config.appearance.fontFamily
                 font.pixelSize: 12
@@ -667,6 +860,7 @@ PanelWindow {
                 color: insightRoot.accent
             }
             Text {
+                Layout.fillWidth: true
                 text: insightRoot.body
                 wrapMode: Text.WordWrap
                 font.family: QsConfig.Config.appearance.fontFamily

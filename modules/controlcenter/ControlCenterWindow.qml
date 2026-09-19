@@ -1,6 +1,6 @@
-import QtQuick 6.10
-import QtQuick.Layouts 6.10
-import QtQuick.Controls 6.10
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
@@ -41,7 +41,12 @@ PanelWindow {
 
     Process { id: settingsProcess; command: ["nm-connection-editor"] }
     Process { id: lockProcess; command: ["loginctl", "lock-session"] }
-    Process { id: powerProcess; command: ["wlogout"] }
+    Process {
+        id: powerProcess
+        command: ["wlogout"]
+        onStarted: root.shouldShow = false
+        onExited: (exitCode, exitStatus) => QsServices.Logger.debug("ControlCenter", `wlogout exited: ${exitCode}`)
+    }
     Process {
         id: screenshotsProcess
         command: ["xdg-open", root.screenshot.screenshotsDir]
@@ -158,7 +163,16 @@ PanelWindow {
                             Behavior on scale { NumberAnimation { duration: 100; easing.bezierCurve: Material3Anim.springGentle } }
 
                             Text { anchors.centerIn: parent; text: "󰐥"; font.family: "Material Design Icons"; font.pixelSize: 24; color: root.cOnSurfaceVariant }
-                            MouseArea { id: powerBtnMouse; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; hoverEnabled: true; onClicked: powerProcess.running = true }
+                            MouseArea {
+                                id: powerBtnMouse
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: {
+                                    QsServices.Logger.debug("ControlCenter", "Launching wlogout power menu")
+                                    powerProcess.running = true
+                                }
+                            }
                         }
                     }
                 }

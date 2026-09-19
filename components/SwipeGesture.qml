@@ -1,7 +1,7 @@
 // SwipeGesture.qml - Swipe gesture handler for dismissible items
 // Material 3 swipe-to-dismiss with velocity-based animation
 
-import QtQuick 6.10
+import QtQuick
 import "effects"
 
 Item {

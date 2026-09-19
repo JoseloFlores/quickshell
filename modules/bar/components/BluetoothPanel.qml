@@ -1,5 +1,5 @@
-import QtQuick 6.10
-import QtQuick.Layouts 6.10
+import QtQuick
+import QtQuick.Layouts
 import Quickshell.Bluetooth
 import Quickshell.Io
 import "../../../services" as QsServices

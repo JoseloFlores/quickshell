@@ -1,6 +1,6 @@
 import Quickshell
-import QtQuick 6.10
-import QtQuick.Layouts 6.10
+import QtQuick
+import QtQuick.Layouts
 import QtQuick.Effects
 import "components" as BarComponents
 import "../../components"

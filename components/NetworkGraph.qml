@@ -1,6 +1,6 @@
 // NetworkGraph.qml - Mini line graph for network traffic
 // Enhanced with Material 3 styling, antialiasing, and gradient fills
-import QtQuick 6.10
+import QtQuick
 import "../services" as QsServices
 
 Canvas {

@@ -2,7 +2,7 @@ pragma Singleton
 
 import Quickshell
 import Quickshell.Io
-import QtQuick 6.10
+import QtQuick
 import "../config" as QsConfig
 import "." as QsServices
 

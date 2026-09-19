@@ -1,4 +1,4 @@
-import QtQuick 6.10
+import QtQuick
 import QtQuick.Layouts
 import "../services" as QsServices
 import "../config" as QsConfig

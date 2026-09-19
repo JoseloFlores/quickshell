@@ -1,6 +1,7 @@
-import QtQuick 6.10
+import QtQuick
 import Quickshell
-import qs.services
+import Quickshell.Io
+import "../../../services" as QsServices
 import "../../../components/effects"
 
 Item {
@@ -18,13 +19,13 @@ Item {
         radius: 14
         
         color: {
-            if (mouseArea.pressed) return Qt.alpha(Pywal.error, 0.3)
-            if (mouseArea.containsMouse) return Qt.alpha(Pywal.error, 0.2)
-            return Qt.alpha(Pywal.error, 0.12)
+            if (mouseArea.pressed) return Qt.alpha(QsServices.Pywal.error, 0.3)
+            if (mouseArea.containsMouse) return Qt.alpha(QsServices.Pywal.error, 0.2)
+            return Qt.alpha(QsServices.Pywal.error, 0.12)
         }
         
         border.width: 0
-        border.color: Qt.alpha(Pywal.error, mouseArea.containsMouse ? 0.4 : 0.2)
+        border.color: Qt.alpha(QsServices.Pywal.error, mouseArea.containsMouse ? 0.4 : 0.2)
         
         scale: mouseArea.pressed ? 0.92 : (mouseArea.containsMouse ? 1.05 : 1.0)
         
@@ -56,9 +57,15 @@ Item {
         anchors.centerIn: parent
         text: "󰐥"
         font.family: "Material Design Icons"
-        color: Pywal.error
+        color: QsServices.Pywal.error
         font.pixelSize: 16
         font.bold: true
+    }
+
+    Process {
+        id: wlogoutProc
+        command: ["wlogout"]
+        onExited: (exitCode, exitStatus) => QsServices.Logger.debug("PowerButton", `wlogout exited: ${exitCode}`)
     }
     
     MouseArea {
@@ -68,8 +75,9 @@ Item {
         cursorShape: Qt.PointingHandCursor
         
         onClicked: {
-            // Execute shutdown command
-            Quickshell.execDetached(["systemctl", "poweroff"])
+            // Open wlogout power menu (shutdown/reboot/suspend/logout/lock)
+            QsServices.Logger.debug("PowerButton", "Launching wlogout power menu")
+            wlogoutProc.running = true
         }
     }
 }

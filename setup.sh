@@ -38,6 +38,7 @@ if command -v pacman &> /dev/null; then
         "wl-clipboard"
         "wf-recorder"
         "libnotify"
+        "wlogout"
     )
 
     # Helper to check and install

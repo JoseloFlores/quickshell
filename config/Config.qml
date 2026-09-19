@@ -77,6 +77,10 @@ Singleton {
     readonly property BarConfig bar: BarConfig {}
     readonly property AppearanceConfig appearanceTokens: AppearanceConfig {}
 
+    // Bar visibility: list of output names (e.g. ["eDP-1"]) where the bar shows.
+    // Empty list = show on all screens. Hot-reloaded from shell.json -> data.bar.screens.
+    readonly property var barScreens: data.bar?.screens ?? []
+
     FileView {
         id: file
         path: {

@@ -1,6 +1,6 @@
 import Quickshell
 import Quickshell.Wayland
-import QtQuick 6.10
+import QtQuick
 import "../../config" as QsConfig
 import "../../services" as QsServices
 
@@ -60,9 +60,19 @@ Scope {
 
         PanelWindow {
             id: window
-            
+
             property var modelData
-            
+
+            // Only show the bar on the configured outputs.
+            // config.barScreens = [] means all screens (see shell.json -> bar.screens).
+            readonly property bool barVisible: {
+                const only = config.barScreens ?? []
+                if (!only || only.length === 0) return true
+                return !!modelData && only.includes(modelData.name)
+            }
+
+            visible: barVisible
+
             screen: modelData
             anchors {
                 top: true
@@ -70,8 +80,8 @@ Scope {
                 right: true
             }
             
-            // Fixed exclusive zone: only the bar strip reserves space
-            exclusiveZone: config.bar.height
+            // Fixed exclusive zone: only the bar strip reserves space (0 on hidden screens)
+            exclusiveZone: barVisible ? config.bar.height : 0
             
             // Dynamic height: bar + inline popup area
             implicitHeight: config.bar.height + (barLoader.item?.popupAreaHeight ?? 0)

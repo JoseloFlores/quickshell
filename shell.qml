@@ -4,7 +4,7 @@
 
 import Quickshell
 import Quickshell.Services.Notifications
-import QtQuick 6.10
+import QtQuick
 import "services" as QsServices
 import "config" as QsConfig
 import "modules/osd"
@@ -19,6 +19,7 @@ ShellRoot {
     readonly property var audio: QsServices.Audio
     readonly property var brightness: QsServices.Brightness
     readonly property var gamingMode: QsServices.GamingMode
+    readonly property var calendar: QsServices.Calendar
     
     // Only register as a notification daemon if explicitly enabled.
     // This avoids noisy warnings when another daemon is active.

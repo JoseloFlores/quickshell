@@ -18,8 +18,8 @@ if pgrep -x quickshell > /dev/null; then
     fi
 fi
 
-# Start new instance
+# Start new instance (same entrypoint as Hyprland autostart)
 echo "Starting QuickShell..."
-nohup quickshell > /dev/null 2>&1 &
+nohup /home/jo/.config/hypr/quickshell-launcher.sh > /dev/null 2>&1 &
 
 echo "Done."

@@ -2,7 +2,7 @@ pragma Singleton
 
 import Quickshell
 import Quickshell.Hyprland
-import QtQuick 6.10
+import QtQuick
 
 Singleton {
     id: root

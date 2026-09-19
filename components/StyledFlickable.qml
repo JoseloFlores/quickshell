@@ -1,7 +1,7 @@
 // StyledFlickable.qml - Material 3 Optimized Flickable
 // Tuned scroll physics for native-feeling interactions
 
-import QtQuick 6.10
+import QtQuick
 import "effects"
 
 Flickable {

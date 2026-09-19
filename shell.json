@@ -11,6 +11,9 @@
     "volumeTimeoutMs": 2000,
     "brightnessTimeoutMs": 2000
   },
+  "bar": {
+    "screens": ["eDP-1"]
+  },
   "notifications": {
     "popupWidth": 340,
     "maxVisible": 5,
@@ -42,7 +45,7 @@
   "dashboard": {
     "enabled": true,
     "width": 860,
-    "height": 640,
+    "height": 860,
     "margin": 18
   }
 }

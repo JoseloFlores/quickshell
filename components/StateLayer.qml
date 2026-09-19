@@ -1,4 +1,4 @@
-import QtQuick 6.10
+import QtQuick
 import QtQuick.Effects
 import "effects"
 

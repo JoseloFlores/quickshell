@@ -1,6 +1,6 @@
 pragma Singleton
 
-import QtQuick 6.10
+import QtQuick
 import Quickshell
 import Quickshell.Services.Notifications
 import "." as QsServices
@@ -142,9 +142,12 @@ Singleton {
         QsServices.Logger.info("Notifs", `DND mode: ${dnd ? "enabled" : "disabled"}`)
     }
     
-    // Clear all notifications
+    // Clear all notifications (permanent delete from history)
     function clearAll() {
-        notifications.forEach(n => n.close());
+        const copy = [...notifications]
+        for (let i = 0; i < copy.length; i++) {
+            if (copy[i]) deleteNotification(copy[i])
+        }
         markAllRead()
         QsServices.Logger.info("Notifs", "All notifications cleared")
     }

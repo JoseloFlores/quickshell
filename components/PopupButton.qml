@@ -1,6 +1,6 @@
 // Reusable bar button component with popup support
-import QtQuick 6.10
-import QtQuick.Layouts 6.10
+import QtQuick
+import QtQuick.Layouts
 import "../services" as QsServices
 import "effects"
 

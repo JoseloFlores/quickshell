@@ -216,7 +216,10 @@ Singleton {
                 const allNetworks = text.trim().split("\n").map(n => {
                     const net = n.replace(rep, PLACEHOLDER).split(":");
                     return {
-                        active: net[0] === "yes",
+                        // ACTIVE is locale-dependent ("yes" in English, "sí" in Spanish, ...),
+                        // and Process.environment overrides are ignored on some builds,
+                        // so accept the common affirmative values case-insensitively.
+                        active: /^(yes|sí|si|y)$/i.test((net[0] ?? "").trim()),
                         strength: parseInt(net[1]),
                         frequency: parseInt(net[2]),
                         ssid: net[3]?.replace(rep2, ":") ?? "",

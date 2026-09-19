@@ -1,7 +1,7 @@
 // IconButton.qml - Material 3 Icon Button with micro-interactions
 // Scale squish on press, hover state, focus ring, icon fill animation
 
-import QtQuick 6.10
+import QtQuick
 import "effects"
 import "../services" as QsServices
 

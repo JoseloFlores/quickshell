@@ -1,6 +1,6 @@
-import QtQuick 6.10
-import QtQuick.Layouts 6.10
-import QtQuick.Controls 6.10
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import "../../../services" as QsServices
@@ -18,6 +18,11 @@ Item {
     Process { id: lockProc; command: ["loginctl", "lock-session"] }
     Process { id: logoutProc; command: ["hyprctl", "dispatch", "exit"] }
     Process { id: sleepProc; command: ["systemctl", "suspend"] }
+    Process {
+        id: powerProc
+        command: ["wlogout"]
+        onExited: (exitCode, exitStatus) => QsServices.Logger.debug("SettingsSection", `wlogout exited: ${exitCode}`)
+    }
     Process { id: wifiSettingsProc; command: ["nm-connection-editor"] }
     Process { id: bluetoothSettingsProc; command: ["blueman-manager"] }
     
@@ -194,7 +199,8 @@ Item {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            QsServices.Logger.debug("SettingsSection", "Power off")
+                            QsServices.Logger.debug("SettingsSection", "Launching wlogout power menu")
+                            powerProc.running = true
                         }
                         
                         onPressed: parent.color = Qt.rgba(pywal.color1.r, pywal.color1.g, pywal.color1.b, 0.15)

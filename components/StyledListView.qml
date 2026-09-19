@@ -1,7 +1,7 @@
 // StyledListView.qml - Material 3 Optimized ListView
 // With tuned scroll physics, smooth scroll bar, and stagger animations
 
-import QtQuick 6.10
+import QtQuick
 import "effects"
 
 ListView {
