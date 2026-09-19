@@ -20,6 +20,6 @@ fi
 
 # Start new instance (same entrypoint as Hyprland autostart)
 echo "Starting QuickShell..."
-nohup /home/jo/.config/hypr/quickshell-launcher.sh > /dev/null 2>&1 &
+nohup "$HOME/.config/hypr/quickshell-launcher.sh" > /dev/null 2>&1 &
 
 echo "Done."

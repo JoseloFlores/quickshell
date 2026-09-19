@@ -172,7 +172,9 @@ Singleton {
         // mode "full": graba el monitor con foco de inmediato
         // mode "area" (default): pide selección con slurp, ESC cancela
         if (mode === "full") {
-            focusedMonitorProc.exec(["sh", "-c", "hyprctl monitors -j | jq -r '.[] | select(.focused==1) | .name'"])
+            // Foco primero, si no hay foco el primer monitor disponible.
+            // Último recurso en QML: "eDP-1" (solo si hyprctl falla del todo).
+            focusedMonitorProc.exec(["sh", "-c", "hyprctl monitors -j | jq -r '((.[] | select(.focused==1) | .name) // .[0].name) // empty'"])
             return
         }
         // Guard: re-exec mataría al slurp ya abierto (SIGTERM) — ignorar doble clic.
@@ -194,7 +196,7 @@ Singleton {
             var output = root._focusedOutput
             root._focusedOutput = ""
             if (code !== 0 || output === "") {
-                QsServices.Logger.warn("Screenshot", "Could not detect focused monitor, using eDP-1")
+                QsServices.Logger.warn("Screenshot", "hyprctl failed, last-resort output eDP-1")
                 output = "eDP-1"
             }
             _startRecorder("", output)
