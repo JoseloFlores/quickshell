@@ -337,7 +337,7 @@ Item {
                 borderWidth: 0
                 accentColor: pywal.warning
                 elevation: 3
-                visible: item?.active ?? false
+                visible: updatesLoader.item?.active ?? false
 
                 Behavior on color {
                     ColorAnimation { duration: 300 }
