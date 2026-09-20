@@ -53,6 +53,11 @@ Singleton {
     property bool dnd: false
     property double lastReadAt: 0
 
+    // DND holders: modos automáticos (gaming, focus) registran su petición
+    // aquí en vez de pisar `dnd` directamente. DND se apaga solo cuando
+    // ningún holder lo pide. Los toggles manuales siguen usando toggleDnd().
+    property var _dndSources: ({})
+
     PersistentProperties {
         id: persist
         property alias dnd: root.dnd
@@ -140,6 +145,30 @@ Singleton {
     function toggleDnd() {
         dnd = !dnd;
         QsServices.Logger.info("Notifs", `DND mode: ${dnd ? "enabled" : "disabled"}`)
+    }
+
+    // Register an automatic DND request (e.g. "gaming", "focus").
+    // DND turns on and stays on until every holder releases it.
+    function requestDnd(source) {
+        if (!source) return
+        _dndSources[source] = true
+        if (!dnd) {
+            dnd = true
+            QsServices.Logger.info("Notifs", `DND requested by ${source}`)
+        }
+    }
+
+    // Release an automatic DND request. DND turns off only when no
+    // holder (and no manual toggle state) keeps it on: a manual
+    // toggle-off while a holder is active is respected and the holder
+    // won't force it back on.
+    function releaseDnd(source) {
+        if (!source || !_dndSources[source]) return
+        delete _dndSources[source]
+        if (Object.keys(_dndSources).length === 0 && dnd) {
+            dnd = false
+            QsServices.Logger.info("Notifs", `DND released by ${source}`)
+        }
     }
     
     // Clear all notifications (permanent delete from history)

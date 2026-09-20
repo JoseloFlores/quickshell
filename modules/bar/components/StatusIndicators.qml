@@ -69,10 +69,10 @@ Item {
                 hoverEnabled: true
                 
                 ToolTip.visible: containsMouse
-                ToolTip.text: "Caffeine Mode (click to disable)"
+                ToolTip.text: "Caffeine Mode (click to toggle)"
                 ToolTip.delay: 300
                 
-                onClicked: idleInhibitor.inhibited = false
+                onClicked: idleInhibitor.inhibited = !idleInhibitor.inhibited
             }
         }
         
@@ -103,10 +103,10 @@ Item {
                 hoverEnabled: true
                 
                 ToolTip.visible: containsMouse
-                ToolTip.text: "Do Not Disturb (click to disable)"
+                ToolTip.text: "Do Not Disturb (click to toggle)"
                 ToolTip.delay: 300
                 
-                onClicked: notifs.dnd = false
+                onClicked: notifs.toggleDnd()
             }
         }
     }

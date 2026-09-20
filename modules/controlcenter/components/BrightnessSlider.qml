@@ -38,7 +38,19 @@ Item {
                 font.family: "Material Design Icons"; font.pixelSize: 24
                 color: root.cPrimary
             }
-            MouseArea { id: iconMouse; anchors.fill: parent; hoverEnabled: true }
+            MouseArea {
+                id: iconMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    // Alterna entre brillo alto y bajo (igual que la barra)
+                    if (root.currentBrightness >= 90)
+                        root.brightness.setBrightness(0.35)
+                    else
+                        root.brightness.setBrightness(1.0)
+                }
+            }
         }
 
         Slider {

@@ -10,6 +10,10 @@ Item {
     property var controlCenter
     property var sidebar
     property var dashboard
+    // Gates de shell.json (ver Bar.qml): si la ventana está desactivada
+    // el click no hace nada en vez de cambiar shouldShow a ciegas.
+    property bool launcherEnabled: true
+    property bool dashboardEnabled: true
     
     implicitWidth: clockRow.implicitWidth
     implicitHeight: clockRow.implicitHeight
@@ -87,7 +91,7 @@ Item {
 
         onClicked: mouse => {
             if (mouse.button === Qt.RightButton) {
-                if (!root.dashboard)
+                if (!root.dashboardEnabled || !root.dashboard)
                     return
 
                 root.dashboard.shouldShow = !root.dashboard.shouldShow
@@ -102,7 +106,7 @@ Item {
                 return
             }
 
-            if (!root.launcher)
+            if (!root.launcherEnabled || !root.launcher)
                 return
 
             root.launcher.shouldShow = !root.launcher.shouldShow

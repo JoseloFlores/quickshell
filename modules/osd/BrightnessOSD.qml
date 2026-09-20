@@ -48,8 +48,8 @@ PanelWindow {
         onTriggered: root.showing = false
     }
     
-    // Fast polling for responsive OSD (100ms when showing, 300ms otherwise)
-    // Use Brightness service (portable backlight detection)
+    // Event-driven vía Brightness service (sin polling): onPctChanged
+    // muestra el OSD cuando cambia el brillo.
     readonly property int pct: brightnessService.percentage
 
     onPctChanged: {

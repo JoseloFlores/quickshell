@@ -36,7 +36,6 @@ Item {
 
     function popupAnchorTarget() {
         if (activePopup === "network" || activePopup === "bluetooth") return connectivityPill
-        if (activePopup === "battery") return powerPill
         return rightPills
     }
     
@@ -166,6 +165,22 @@ Item {
                     property: "dashboard"
                     value: root.dashboard
                     when: clockLoader.status === Loader.Ready && root.dashboard !== undefined
+                    restoreMode: Binding.RestoreBinding
+                }
+
+                Binding {
+                    target: clockLoader.item
+                    property: "launcherEnabled"
+                    value: config.launcher.enabled
+                    when: clockLoader.status === Loader.Ready
+                    restoreMode: Binding.RestoreBinding
+                }
+
+                Binding {
+                    target: clockLoader.item
+                    property: "dashboardEnabled"
+                    value: config.dashboard.enabled
+                    when: clockLoader.status === Loader.Ready
                     restoreMode: Binding.RestoreBinding
                 }
             }
@@ -413,6 +428,46 @@ Item {
                         source: "components/Battery.qml"
                     }
 
+                    // Notification center (sidebar) toggle with unread badge
+                    Loader {
+                        id: notificationToggleLoader
+                        anchors.verticalCenter: parent.verticalCenter
+                        asynchronous: true
+                        source: "components/NotificationCenterToggle.qml"
+
+                        Binding {
+                            target: notificationToggleLoader.item
+                            property: "sidebar"
+                            value: root.sidebar
+                            when: notificationToggleLoader.status === Loader.Ready && root.sidebar !== undefined
+                            restoreMode: Binding.RestoreBinding
+                        }
+
+                        Binding {
+                            target: notificationToggleLoader.item
+                            property: "controlCenter"
+                            value: root.controlCenter
+                            when: notificationToggleLoader.status === Loader.Ready && root.controlCenter !== undefined
+                            restoreMode: Binding.RestoreBinding
+                        }
+
+                        Binding {
+                            target: notificationToggleLoader.item
+                            property: "launcher"
+                            value: root.launcher
+                            when: notificationToggleLoader.status === Loader.Ready && root.launcher !== undefined
+                            restoreMode: Binding.RestoreBinding
+                        }
+
+                        Binding {
+                            target: notificationToggleLoader.item
+                            property: "featureEnabled"
+                            value: config.sidebar.enabled
+                            when: notificationToggleLoader.status === Loader.Ready
+                            restoreMode: Binding.RestoreBinding
+                        }
+                    }
+
                     // Control Center Toggle
                     Loader {
                         id: controlCenterLoader
@@ -425,6 +480,14 @@ Item {
                             property: "controlCenter"
                             value: root.controlCenter
                             when: controlCenterLoader.status === Loader.Ready && root.controlCenter !== undefined
+                            restoreMode: Binding.RestoreBinding
+                        }
+
+                        Binding {
+                            target: controlCenterLoader.item
+                            property: "featureEnabled"
+                            value: config.controlCenter.enabled
+                            when: controlCenterLoader.status === Loader.Ready
                             restoreMode: Binding.RestoreBinding
                         }
                     }
@@ -480,14 +543,6 @@ Item {
                     property: "barWindow"
                     value: root.barWindow
                     when: mediaPlayerLoader.status === Loader.Ready && root.barWindow !== undefined
-                    restoreMode: Binding.RestoreBinding
-                }
-                
-                Binding {
-                    target: mediaPlayerLoader.item
-                    property: "mediaPopup"
-                    value: null
-                    when: mediaPlayerLoader.status === Loader.Ready
                     restoreMode: Binding.RestoreBinding
                 }
             }

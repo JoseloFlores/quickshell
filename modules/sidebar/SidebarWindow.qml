@@ -45,8 +45,9 @@ PanelWindow {
     }
 
     onShouldShowChanged: {
+        // Ya no se marca todo como leído al abrir: el badge persiste hasta
+        // que el usuario pulse Clear/Dismiss/Delete en cada notificación.
         if (shouldShow) {
-            notifs.markAllRead()
             Qt.callLater(() => panel.forceActiveFocus())
         }
     }

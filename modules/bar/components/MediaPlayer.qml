@@ -11,7 +11,6 @@ Item {
     id: root
     
     property var barWindow
-    property var mediaPopup
     
     // Always show - either player content or "No media" text
     // Use fixed width for no media state to avoid circular dependency
@@ -25,8 +24,6 @@ Item {
     property real progress: 0
     property real duration: player?.length ?? 1
     property real progressPercent: duration > 0 ? progress / duration : 0
-    
-    property bool isHovered: contentMouse.containsMouse || noMediaMouse.containsMouse
     
     // Poll position via playerctl for live progress updates
     Timer {
@@ -100,13 +97,13 @@ Item {
         }
     }
     
-    // Mouse area for no media state (outside layout)
+    // Display-only area for no media state (not clickable)
     MouseArea {
         id: noMediaMouse
         anchors.fill: parent
         visible: !hasPlayer
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
+        hoverEnabled: false
+        cursorShape: Qt.ArrowCursor
     }
     
     RowLayout {
@@ -204,7 +201,8 @@ Item {
             MouseArea {
                 id: contentMouse
                 anchors.fill: parent
-                hoverEnabled: true
+                hoverEnabled: false
+                cursorShape: Qt.ArrowCursor
             }
             
             Text {

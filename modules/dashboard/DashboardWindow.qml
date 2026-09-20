@@ -458,7 +458,7 @@ PanelWindow {
                                         Layout.fillWidth: true
                                         icon: "󰄀"
                                         label: "Region"
-                                        subLabel: "Screenshot"
+                                        subLabel: "Screenshot region"
                                         accent: root.cPrimary
                                         onClicked: { root.closeDashboard(); regionTimer.restart() }
                                     }
@@ -506,6 +506,9 @@ PanelWindow {
                                             border.color: root.powerProfiles.activeProfile === modelData
                                                 ? Qt.rgba(root.cPrimary.r, root.cPrimary.g, root.cPrimary.b, 0.36)
                                                 : Qt.rgba(root.cText.r, root.cText.g, root.cText.b, 0.05)
+                                            // Sin power-profiles-daemon las píldoras se atenúan
+                                            // (antes el click era silencioso)
+                                            opacity: root.powerProfiles.isAvailable ? 1 : 0.4
 
                                             Text {
                                                 anchors.centerIn: parent
@@ -519,6 +522,7 @@ PanelWindow {
                                             MouseArea {
                                                 anchors.fill: parent
                                                 cursorShape: Qt.PointingHandCursor
+                                                enabled: root.powerProfiles.isAvailable
                                                 onClicked: root.powerProfiles.setProfile(modelData)
                                             }
                                         }

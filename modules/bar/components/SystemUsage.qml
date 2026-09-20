@@ -8,17 +8,12 @@ Item {
     
     readonly property var pywal: QsServices.Pywal
     readonly property var system: QsServices.SystemUsage
-    readonly property bool isHovered: mouseArea.containsMouse
+
+    // Display-only: sin MouseArea (antes tenía hover sin acción)
     
     implicitWidth: systemRow.implicitWidth
     implicitHeight: systemRow.implicitHeight
-    
-    MouseArea {
-        id: mouseArea
-        anchors.fill: parent
-        hoverEnabled: true
-    }
-    
+
     RowLayout {
         id: systemRow
         anchors.centerIn: parent

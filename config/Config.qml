@@ -113,6 +113,7 @@ Singleton {
 
     // Backwards-compatible aliases used across the repo
     readonly property var controlCenter: ({
+        enabled: data.controlcenter?.enabled ?? true,
         width: 700,
         maxHeight: 1000,
         padding: 16,

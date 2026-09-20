@@ -8,6 +8,8 @@ Item {
     id: root
     
     property var controlCenter
+    // Se desactiva si controlcenter.enabled=false en shell.json (ver Bar.qml)
+    property bool featureEnabled: true
     
     readonly property var pywal: QsServices.Pywal
     readonly property bool isActive: controlCenter?.shouldShow ?? false
@@ -24,7 +26,7 @@ Item {
         cursorShape: Qt.PointingHandCursor
         
         onClicked: {
-            if (controlCenter) {
+            if (root.featureEnabled && controlCenter) {
                 controlCenter.shouldShow = !controlCenter.shouldShow
             }
         }

@@ -28,12 +28,14 @@
     "maxResults": 8,
     "terminalCommand": ["foot"],
     "favorites": [
+      "google-chrome-stable",
       "firefox",
-      "zen-browser",
-      "thunar",
+      "nautilus",
+      "gnome-terminal",
+      "fuzzel",
+      "foot",
       "code",
-      "kitty",
-      "Alacritty"
+      "kitty"
     ]
   },
   "sidebar": {
@@ -41,6 +43,9 @@
     "width": 420,
     "margin": 12,
     "maxHistory": 80
+  },
+  "controlcenter": {
+    "enabled": true
   },
   "dashboard": {
     "enabled": true,

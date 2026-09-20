@@ -43,6 +43,16 @@ PanelWindow {
     Process { id: settingsProcess; command: ["nm-connection-editor"] }
     Process { id: lockProcess; command: ["loginctl", "lock-session"] }
     Process {
+        id: logoutProcess
+        command: ["hyprctl", "dispatch", "exit"]
+        onStarted: root.shouldShow = false
+    }
+    Process {
+        id: sleepProcess
+        command: ["systemctl", "suspend"]
+        onStarted: root.shouldShow = false
+    }
+    Process {
         id: powerProcess
         command: ["wlogout"]
         onStarted: root.shouldShow = false
@@ -172,6 +182,28 @@ PanelWindow {
 
                         Rectangle {
                             width: 48; height: 48; radius: 24
+                            color: logoutBtnMouse.pressed ? Qt.rgba(root.cOnSurface.r, root.cOnSurface.g, root.cOnSurface.b, 0.12) : logoutBtnMouse.containsMouse ? Qt.rgba(root.cOnSurface.r, root.cOnSurface.g, root.cOnSurface.b, 0.08) : "transparent"
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            scale: logoutBtnMouse.pressed ? 0.95 : 1.0
+                            Behavior on scale { NumberAnimation { duration: 100; easing.bezierCurve: Material3Anim.springGentle } }
+
+                            Text { anchors.centerIn: parent; text: "󰍃"; font.family: "Material Design Icons"; font.pixelSize: 24; color: root.cOnSurfaceVariant }
+                            MouseArea { id: logoutBtnMouse; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; hoverEnabled: true; onClicked: logoutProcess.running = true }
+                        }
+
+                        Rectangle {
+                            width: 48; height: 48; radius: 24
+                            color: sleepBtnMouse.pressed ? Qt.rgba(root.cOnSurface.r, root.cOnSurface.g, root.cOnSurface.b, 0.12) : sleepBtnMouse.containsMouse ? Qt.rgba(root.cOnSurface.r, root.cOnSurface.g, root.cOnSurface.b, 0.08) : "transparent"
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            scale: sleepBtnMouse.pressed ? 0.95 : 1.0
+                            Behavior on scale { NumberAnimation { duration: 100; easing.bezierCurve: Material3Anim.springGentle } }
+
+                            Text { anchors.centerIn: parent; text: "󰤄"; font.family: "Material Design Icons"; font.pixelSize: 24; color: root.cOnSurfaceVariant }
+                            MouseArea { id: sleepBtnMouse; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; hoverEnabled: true; onClicked: sleepProcess.running = true }
+                        }
+
+                        Rectangle {
+                            width: 48; height: 48; radius: 24
                             color: powerBtnMouse.pressed ? Qt.rgba(root.cOnSurface.r, root.cOnSurface.g, root.cOnSurface.b, 0.12) : powerBtnMouse.containsMouse ? Qt.rgba(root.cOnSurface.r, root.cOnSurface.g, root.cOnSurface.b, 0.08) : "transparent"
                             Behavior on color { ColorAnimation { duration: 150 } }
                             scale: powerBtnMouse.pressed ? 0.95 : 1.0
@@ -216,8 +248,8 @@ PanelWindow {
                             QuickToggle { Layout.fillWidth: true; icon: "󰔎"; label: "Do Not Disturb"; subLabel: root.notifs.dnd ? "On" : "Off"; active: root.notifs.dnd; activeColor: pywal.warning; onClicked: root.notifs.toggleDnd() }
                             QuickToggle { Layout.fillWidth: true; icon: "󰅶"; label: "Caffeine"; subLabel: root.idleInhibitor.inhibited ? "Active" : "Off"; active: root.idleInhibitor.inhibited; activeColor: pywal.info; onClicked: root.idleInhibitor.inhibited = !root.idleInhibitor.inhibited }
                             QuickToggle { Layout.fillWidth: true; icon: "󰾴"; label: "Gaming Mode"; subLabel: root.gamingMode.enabled ? "Performance" : "Balanced"; active: root.gamingMode.enabled; activeColor: pywal.success; onClicked: root.gamingMode.toggle() }
-                            QuickToggle { Layout.fillWidth: true; icon: "󰄉"; label: "Focus Mode"; subLabel: root.settings.focusModeEnabled ? `${root.settings.focusModeMinutesLeft} min remaining` : "25 min timer"; active: root.settings.focusModeEnabled; activeColor: pywal.info; onClicked: { root.settings.focusModeEnabled = !root.settings.focusModeEnabled; if (root.settings.focusModeEnabled) { root.settings.focusModeMinutesLeft = 25; root.notifs.dnd = true } } }
-                            QuickToggle { Layout.fillWidth: true; Layout.columnSpan: 2; icon: "󰹑"; label: "Screenshot"; subLabel: "Capture Screen"; active: false; activeColor: root.cSecondary; onClicked: { root.shouldShow = false; screenshotTimer.mode = "screen"; screenshotTimer.restart() } }
+                            QuickToggle { Layout.fillWidth: true; icon: "󰄉"; label: "Focus Mode"; subLabel: root.settings.focusModeEnabled ? `${root.settings.focusModeMinutesLeft} min remaining` : "25 min timer"; active: root.settings.focusModeEnabled; activeColor: pywal.info; onClicked: { root.settings.focusModeEnabled = !root.settings.focusModeEnabled; if (root.settings.focusModeEnabled) root.settings.focusModeMinutesLeft = 25 } }
+                            QuickToggle { Layout.fillWidth: true; Layout.columnSpan: 2; icon: "󰹑"; label: "Screenshot"; subLabel: "Capture full screen"; active: false; activeColor: root.cSecondary; onClicked: { root.shouldShow = false; screenshotTimer.mode = "screen"; screenshotTimer.restart() } }
                             QuickToggle {
                                 Layout.fillWidth: true; Layout.columnSpan: 2
                                 icon: root.updates.checking ? "󰑐" : (root.updates.count > 0 ? "󰚰" : "󰄲")

@@ -57,8 +57,6 @@ ShellRoot {
         pywal: root.pywal
     }
 
-    property bool focusModePreviousDnd: false
-
     BatteryMonitor {}
 
     Timer {
@@ -87,13 +85,12 @@ ShellRoot {
     Connections {
         target: QsServices.Settings
         function onFocusModeEnabledChanged() {
+            // FocusMode registra su DND vía holders: convive con GamingMode
+            // sin pisarse (DND se apaga solo cuando nadie lo pide).
             if (QsServices.Settings.focusModeEnabled) {
-                // Save previous DND state when enabling
-                root.focusModePreviousDnd = notifs.dnd
+                notifs.requestDnd("focus")
             } else {
-                // Restore DND only if focus mode's state wasn't manually overridden
-                if (notifs.dnd === true)
-                    notifs.dnd = root.focusModePreviousDnd
+                notifs.releaseDnd("focus")
             }
         }
     }

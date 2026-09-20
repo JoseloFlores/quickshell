@@ -9,6 +9,8 @@ Item {
     property var sidebar
     property var controlCenter
     property var launcher
+    // Se desactiva si sidebar.enabled=false en shell.json (ver Bar.qml)
+    property bool featureEnabled: true
 
     readonly property var pywal: QsServices.Pywal
     readonly property var notifs: QsServices.Notifs
@@ -27,7 +29,7 @@ Item {
         cursorShape: Qt.PointingHandCursor
 
         onClicked: {
-            if (!sidebar)
+            if (!root.featureEnabled || !sidebar)
                 return
 
             sidebar.shouldShow = !sidebar.shouldShow

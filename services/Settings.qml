@@ -9,8 +9,8 @@ import "." as QsServices
 Singleton {
     id: root
     
-    property bool dndEnabled: false
-    property bool caffeineEnabled: false
+    // Nota: dndEnabled/caffeineEnabled se eliminaron (duplicados huérfanos:
+    // el DND real vive en Notifs.dnd con holders, Caffeine no persiste).
     property bool focusModeEnabled: false
     property int focusModeMinutesLeft: 0
     
@@ -41,8 +41,6 @@ Singleton {
             onStreamFinished: {
                 try {
                     const settings = JSON.parse(text)
-                    root.dndEnabled = settings.dndEnabled ?? false
-                    root.caffeineEnabled = settings.caffeineEnabled ?? false
                     root.focusModeEnabled = settings.focusModeEnabled ?? false
                     root.focusModeMinutesLeft = settings.focusModeMinutesLeft ?? 0
                 } catch(e) {
@@ -60,8 +58,6 @@ Singleton {
     
     function doSaveSettings() {
         const settings = {
-            dndEnabled: root.dndEnabled,
-            caffeineEnabled: root.caffeineEnabled,
             focusModeEnabled: root.focusModeEnabled,
             focusModeMinutesLeft: root.focusModeMinutesLeft
         }
@@ -81,8 +77,6 @@ Singleton {
         id: writeProc
     }
     
-    onDndEnabledChanged: saveSettings()
-    onCaffeineEnabledChanged: saveSettings()
     onFocusModeEnabledChanged: saveSettings()
     onFocusModeMinutesLeftChanged: saveSettings()
 }

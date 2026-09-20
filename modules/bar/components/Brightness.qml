@@ -101,6 +101,14 @@ Item {
         // en ambos casos en vez de un salto entero por evento mínimo.
         property real wheelAccum: 0
 
+        onClicked: {
+            // Click alterna entre brillo alto y bajo (la rueda ajusta fino)
+            if (brightness.percentage >= 90)
+                brightness.setBrightness(0.35)
+            else
+                brightness.setBrightness(1.0)
+        }
+
         onWheel: wheel => {
             wheelAccum += wheel.angleDelta.y
             while (wheelAccum >= 120) {

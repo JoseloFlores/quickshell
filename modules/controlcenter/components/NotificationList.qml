@@ -95,7 +95,9 @@ Item {
                         pywal: root.pywal
                         showCloseButton: true
                         showTimestamp: false
-                        showActions: false
+                        // true = todas las acciones como botones (antes false
+                        // y el click solo invocaba actions[0])
+                        showActions: true
                         showBody: true
                         showAppIcon: false
 
